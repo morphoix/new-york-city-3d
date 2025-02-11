@@ -1,5 +1,5 @@
 {
-  "name": "cyberpunk-abu-dhabi",
+  "name": "new-york-city-3d",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,14 +9,20 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@deck.gl/mapbox": "^9.1.0",
+    "@types/react-map-gl": "^6.1.7",
     "@types/styled-components": "^5.1.34",
+    "@types/three": "^0.173.0",
     "deck.gl": "^9.1.0",
+    "hubble.gl": "^1.4.0",
     "mapbox-gl": "^3.9.4",
+    "maplibre-gl": "^5.1.0",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-map-gl": "^8.0.1",
-    "styled-components": "^6.1.15"
+    "styled-components": "^6.1.15",
+    "three": "^0.173.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
