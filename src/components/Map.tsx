@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Map } from "react-map-gl/mapbox";
 import styled from "styled-components";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
+// Initial camera view state
 const INITIAL_VIEW_STATE = {
   longitude: -74.0135,
   latitude: 40.7128,
@@ -15,200 +16,123 @@ const INITIAL_VIEW_STATE = {
   bearing: 180,
 };
 
-type Keyframe = {
-  longitude: number;
-  latitude: number;
-  zoom: number;
-  pitch: number;
-  bearing: number;
+const KEYFRAMES_SET = {
+  animation1: [
+    { longitude: -74.05, latitude: 40.68, zoom: 12, pitch: 60, bearing: 0 },
+    { longitude: -74.016, latitude: 40.705, zoom: 14, pitch: 70, bearing: 20 },
+    {
+      longitude: -74.0135,
+      latitude: 40.7128,
+      zoom: 15,
+      pitch: 75,
+      bearing: 45,
+    },
+    {
+      longitude: -74.012,
+      latitude: 40.716,
+      zoom: 16.5,
+      pitch: 65,
+      bearing: 90,
+    },
+    { longitude: -74.01, latitude: 40.725, zoom: 18, pitch: 45, bearing: 120 },
+    { longitude: -74.009, latitude: 40.735, zoom: 18, pitch: 40, bearing: 180 },
+    { longitude: -73.975, latitude: 40.769, zoom: 14, pitch: 60, bearing: 270 },
+  ],
+  animation2: [
+    { longitude: -74.0135, latitude: 40.7128, zoom: 15, pitch: 70, bearing: 0 },
+    { longitude: -74.009, latitude: 40.7215, zoom: 16, pitch: 75, bearing: 20 },
+    { longitude: -73.9851, latitude: 40.758, zoom: 17, pitch: 80, bearing: 45 },
+    {
+      longitude: -73.973,
+      latitude: 40.769,
+      zoom: 15.5,
+      pitch: 65,
+      bearing: 90,
+    },
+    { longitude: -74.011, latitude: 40.738, zoom: 16, pitch: 70, bearing: 180 },
+    { longitude: -73.96, latitude: 40.7705, zoom: 14, pitch: 75, bearing: 140 },
+    {
+      longitude: -73.9851,
+      latitude: 40.758,
+      zoom: 16,
+      pitch: 70,
+      bearing: 250,
+    },
+  ],
 };
 
-const ANIMATION_KEYFRAMES_2 = [
-  // Start near One World Trade Center
-  {
-    longitude: -74.0135,
-    latitude: 40.7128,
-    zoom: 15,
-    pitch: 70,
-    bearing: 0,
-  },
-  // Fly north along West Street
-  {
-    longitude: -74.009,
-    latitude: 40.7215,
-    zoom: 16,
-    pitch: 75,
-    bearing: 20,
-  },
-  // Pass by Times Square
-  {
-    longitude: -73.9851,
-    latitude: 40.758,
-    zoom: 17,
-    pitch: 80,
-    bearing: 45,
-  },
-  // Fly across Central Park from the south
-  {
-    longitude: -73.973,
-    latitude: 40.769,
-    zoom: 15.5,
-    pitch: 65,
-    bearing: 90,
-  },
-  // Fly through the GreenWich Street
-  {
-    longitude: -74.011,
-    latitude: 40.738,
-    zoom: 16,
-    pitch: 70,
-    bearing: 180,
-  },
-  // Turn towards the East River
-  {
-    longitude: -73.96,
-    latitude: 40.7705,
-    zoom: 14,
-    pitch: 75,
-    bearing: 140,
-  },
-  // Circle back towards Midtown
-  {
-    longitude: -73.9851,
-    latitude: 40.758,
-    zoom: 16,
-    pitch: 70,
-    bearing: 250,
-  },
-  // Finish with a slow move back near the One World Trade Center
-  {
-    longitude: -74.0135,
-    latitude: 40.7128,
-    zoom: 14,
-    pitch: 60,
-    bearing: 0,
-  },
-];
-
-const ANIMATION_KEYFRAMES_1 = [
-  // Start over the ocean, approaching Manhattan
-  {
-    longitude: -74.05,
-    latitude: 40.68,
-    zoom: 12,
-    pitch: 60,
-    bearing: 0,
-  },
-  // Fly towards the Financial District skyline
-  {
-    longitude: -74.016,
-    latitude: 40.705,
-    zoom: 14,
-    pitch: 70,
-    bearing: 20,
-  },
-  // Approach One World Trade Center
-  {
-    longitude: -74.0135,
-    latitude: 40.7128,
-    zoom: 15,
-    pitch: 75,
-    bearing: 45,
-  },
-  // Descend closer to Greenwich Street, starting to lower the camera angle
-  {
-    longitude: -74.012,
-    latitude: 40.716,
-    zoom: 16.5,
-    pitch: 65,
-    bearing: 90,
-  },
-  // Move down Greenwich Street, simulating a car ride
-  {
-    longitude: -74.01,
-    latitude: 40.725,
-    zoom: 18,
-    pitch: 45,
-    bearing: 120,
-  },
-  // Continue along Greenwich Street with a sweeping curve
-  {
-    longitude: -74.009,
-    latitude: 40.735,
-    zoom: 18,
-    pitch: 40,
-    bearing: 180,
-  },
-  // Slowly ascend and pan towards Central Park as the final scene
-  {
-    longitude: -73.975,
-    latitude: 40.769,
-    zoom: 14,
-    pitch: 60,
-    bearing: 270,
-  },
-];
+type Keyframe = typeof INITIAL_VIEW_STATE;
 
 const NewYorkMap = () => {
-  const mapRef = useRef(null);
-  const [keyframes, setKeyframes] = useState<Keyframe[]>(ANIMATION_KEYFRAMES_1);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
+  const [activeKeyframes, setActiveKeyframes] = useState<Keyframe[]>(
+    KEYFRAMES_SET.animation1
+  );
+
+  const lerp = useCallback(
+    (start: number, end: number, t: number) => start + t * (end - start),
+    []
+  );
+
+  const interpolateViewState = useCallback(
+    (start: Keyframe, end: Keyframe, t: number) => ({
+      longitude: lerp(start.longitude, end.longitude, t),
+      latitude: lerp(start.latitude, end.latitude, t),
+      zoom: lerp(start.zoom, end.zoom, t),
+      pitch: lerp(start.pitch, end.pitch, t),
+      bearing: lerp(start.bearing, end.bearing, t),
+    }),
+    [lerp]
+  );
+
+  const animateCamera = useCallback(
+    (keyframes: Keyframe[], duration = 45000) => {
+      let animationFrame: number | null = null;
+      let startTime: number | null = null;
+
+      const animate = (timestamp: number) => {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        const frameIndex = Math.floor(progress * (keyframes.length - 1));
+        const nextFrameIndex = Math.min(frameIndex + 1, keyframes.length - 1);
+        const localProgress = (progress * (keyframes.length - 1)) % 1;
+
+        const newViewState = interpolateViewState(
+          keyframes[frameIndex],
+          keyframes[nextFrameIndex],
+          localProgress
+        );
+
+        if (mapRef.current) {
+          mapRef.current.flyTo({ ...newViewState, duration: 0 });
+        }
+
+        if (progress < 1) {
+          animationFrame = requestAnimationFrame(animate);
+        }
+      };
+
+      animationFrame = requestAnimationFrame(animate);
+
+      return () => {
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+      };
+    },
+    [interpolateViewState]
+  );
 
   useEffect(() => {
-    let animationFrame: number | null = null;
-    let progress = 0;
-    const duration = 45000;
+    const cancelAnimation = animateCamera(activeKeyframes);
 
-    const lerp = (start: number, end: number, t: number) =>
-      start + t * (end - start);
+    return cancelAnimation;
+  }, [activeKeyframes, animateCamera]);
 
-    const interpolateViewState = (
-      startKeyframe: Keyframe,
-      endKeyframe: Keyframe,
-      t: number
-    ) => ({
-      longitude: lerp(startKeyframe.longitude, endKeyframe.longitude, t),
-      latitude: lerp(startKeyframe.latitude, endKeyframe.latitude, t),
-      zoom: lerp(startKeyframe.zoom, endKeyframe.zoom, t),
-      pitch: lerp(startKeyframe.pitch, endKeyframe.pitch, t),
-      bearing: lerp(startKeyframe.bearing, endKeyframe.bearing, t),
-    });
-
-    const animate = (timestamp: number) => {
-      if (!animationFrame) animationFrame = timestamp;
-      const elapsed = timestamp - animationFrame;
-
-      progress = Math.min(elapsed / duration, 1);
-
-      const keyframeIndex = Math.floor(progress * (keyframes.length - 1));
-      const nextKeyframeIndex = Math.min(
-        keyframeIndex + 1,
-        keyframes.length - 1
-      );
-      const localProgress = (progress * (keyframes.length - 1)) % 1;
-
-      const newViewState = interpolateViewState(
-        keyframes[keyframeIndex],
-        keyframes[nextKeyframeIndex],
-        localProgress
-      );
-
-      if (mapRef.current) {
-        // eslint-disable-next-line
-        // @ts-ignore
-        mapRef.current?.flyTo({ ...newViewState, duration: 0 });
-      }
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-
-    return () => {
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-    };
-  }, [keyframes]);
+  const handleSwitchAnimation = (keyframes: Keyframe[]) => {
+    setActiveKeyframes(keyframes);
+  };
 
   return (
     <MapWrapper>
@@ -220,20 +144,20 @@ const NewYorkMap = () => {
       />
       <ControlsWrapper>
         <button
-          onClick={() => {
-            setKeyframes(ANIMATION_KEYFRAMES_1);
-          }}
-          className={keyframes === ANIMATION_KEYFRAMES_1 ? "active" : ""}
+          onClick={handleSwitchAnimation.bind(null, KEYFRAMES_SET.animation1)}
+          className={
+            activeKeyframes === KEYFRAMES_SET.animation1 ? "active" : ""
+          }
         >
-          Keyframe 1
+          Animation 1
         </button>
         <button
-          onClick={() => {
-            setKeyframes(ANIMATION_KEYFRAMES_2);
-          }}
-          className={keyframes === ANIMATION_KEYFRAMES_2 ? "active" : ""}
+          onClick={handleSwitchAnimation.bind(null, KEYFRAMES_SET.animation2)}
+          className={
+            activeKeyframes === KEYFRAMES_SET.animation2 ? "active" : ""
+          }
         >
-          Keyframe 2
+          Animation 2
         </button>
       </ControlsWrapper>
     </MapWrapper>
@@ -246,26 +170,20 @@ const MapWrapper = styled.div`
   width: 100vw;
   height: 100vh;
   position: relative;
-
-  > button {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 1;
-  }
 `;
 
 const ControlsWrapper = styled.div`
-  display: inline-flex;
+  display: flex;
   gap: 10px;
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 1;
 
-  > button {
+  button {
     all: unset;
     background-color: black;
+    color: white;
     padding: 10px;
     border-radius: 5px;
     cursor: pointer;
@@ -274,9 +192,10 @@ const ControlsWrapper = styled.div`
     &:hover {
       background-color: #333;
     }
-  }
 
-  > button.active {
-    color: darkorange;
+    &.active {
+      color: orange;
+      font-weight: bold;
+    }
   }
 `;
