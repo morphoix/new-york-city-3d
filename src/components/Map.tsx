@@ -69,6 +69,7 @@ const NewYorkMap = () => {
   const [activeKeyframes, setActiveKeyframes] = useState<Keyframe[]>(
     KEYFRAMES_SET.animation1
   );
+  const [progress, setProgress] = useState(0);
 
   const lerp = useCallback(
     (start: number, end: number, t: number) => start + t * (end - start),
@@ -95,6 +96,7 @@ const NewYorkMap = () => {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
+        setProgress(progress);
 
         const frameIndex = Math.floor(progress * (keyframes.length - 1));
         const nextFrameIndex = Math.min(frameIndex + 1, keyframes.length - 1);
@@ -159,6 +161,7 @@ const NewYorkMap = () => {
         >
           Animation 2
         </button>
+        <span>{`Timestamp: ${progress.toFixed(2)}`}</span>
       </ControlsWrapper>
     </MapWrapper>
   );
@@ -180,7 +183,8 @@ const ControlsWrapper = styled.div`
   right: 10px;
   z-index: 1;
 
-  button {
+  button,
+  span {
     all: unset;
     background-color: black;
     color: white;
