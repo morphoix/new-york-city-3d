@@ -193,6 +193,8 @@ const NewYorkMap = () => {
       );
 
       if (mapRef.current) {
+        // eslint-disable-next-line
+        // @ts-ignore
         mapRef.current?.flyTo({ ...newViewState, duration: 0 });
       }
 
