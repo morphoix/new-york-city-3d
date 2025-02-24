@@ -56,14 +56,14 @@ const layers = [issueLayer, assetLayer] as mapboxgl.Layer[];
 export const APP_MARKERS = [ISSUE_MARKER, ASSET_MARKER];
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-const INITIAL_STATE = {
+export const INITIAL_STATE = {
   center: {
-    lng: -74.01766840391261,
-    lat: 40.69881970096151,
+    lng: -74.02037577428302,
+    lat: 40.69605089526675,
   },
-  zoom: 17.89243517801523,
-  pitch: 81.60647884924101,
-  bearing: 29.394442146609208,
+  zoom: 15.762683652836502,
+  pitch: 76.9999999999999,
+  bearing: 37.39444214660887,
 };
 
 export const useMap = () => {
@@ -120,13 +120,13 @@ export const useMap = () => {
     //   console.log(e.lngLat);
     // });
 
-    map.on("move", () => {
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      const pitch = map.getPitch();
-      const bearing = map.getBearing();
-      console.log({ center, zoom, pitch, bearing });
-    });
+    // map.on("move", () => {
+    //   const center = map.getCenter();
+    //   const zoom = map.getZoom();
+    //   const pitch = map.getPitch();
+    //   const bearing = map.getBearing();
+    //   console.log({ center, zoom, pitch, bearing });
+    // });
 
     return () => {
       map.remove();
