@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import mapboxgl from "mapbox-gl";
-import { PIN_DATA } from "./mock-data";
+import { INITIAL_STATE, PIN_DATA } from "./mock-data";
 
 export const ISSUE_MARKER = {
   id: "issue-marker",
@@ -56,15 +56,6 @@ const layers = [issueLayer, assetLayer] as mapboxgl.Layer[];
 export const APP_MARKERS = [ISSUE_MARKER, ASSET_MARKER];
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-export const INITIAL_STATE = {
-  center: {
-    lng: -74.02037577428302,
-    lat: 40.69605089526675,
-  },
-  zoom: 15.762683652836502,
-  pitch: 76.9999999999999,
-  bearing: 37.39444214660887,
-};
 
 export const useMap = () => {
   const mapRef = useRef<mapboxgl.Map | null>(null);
